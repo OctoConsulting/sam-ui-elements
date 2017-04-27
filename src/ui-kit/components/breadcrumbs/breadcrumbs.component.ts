@@ -21,15 +21,17 @@ export class SamBreadcrumbsComponent {
     @Input() rootCrumb: IBreadcrumb = undefined;
 
     private _routeSubscription: any;
-
+    private count = 0;
     constructor(private route: ActivatedRoute) {}
 
     ngOnInit() {
       // If listenToRouter is true, use internal function to generate breadcrumbs from routes
       if (this.listenToRouter) {
         this.route.url.subscribe((segments: UrlSegment[]) => {
-          console.log(this.route.root);
-          // this.crumbs = this.getBreadcrumbs(this.route.root);
+          // Requires setTimeout to load data from route config before running getBreadcrumbs
+          setTimeout(() => {
+            this.crumbs = this.getBreadcrumbs(this.route.root);
+          });
         });
       }
     }
@@ -43,50 +45,47 @@ export class SamBreadcrumbsComponent {
 
     // Recursive function that takes a route and returns an array of IBreacrumbs from the root to the lowest child
     getBreadcrumbs(route: ActivatedRoute, url: string = '', crumbs: Array<IBreadcrumb> = []): IBreadcrumb[] {
-      // // Get url from route snapshot
-      // // Appends to url string of parent route
-      // if (route.snapshot.url) {
-      //   url += route.snapshot.url.reduce((prev, curr) =>  {return prev = prev + '/' + curr }, '');
-      // }
-      // console.log(url, this.rootCrumb.url);
+      // Get url from route snapshot
+      // Appends to url string of parent
+      url += route.snapshot.url.reduce((prev, curr) =>  {return prev = prev + '/' + curr }, '');
 
-      // // Creates a crumb from route snapshot data
-      // // Breadcrumb property is set on the data property of the route
-      // let crumbLabel: string;
-      // if (route.snapshot.data) {
-      //   // This assignment is only here to cast to any to avoid a typescript error
-      //   const data: any = route.snapshot.data as any;
-      //   crumbLabel = data.breadcrumb;
-      // }
+      // Creates a crumb from route snapshot data
+      // Breadcrumb property is set on the data property of the route
+      let crumbLabel: string;
+      if (route.snapshot.data) {
+        // This assignment is only here to cast to any to avoid a typescript error
+        const data: any = route.snapshot.data as any;
+        crumbLabel = data.breadcrumb;
+      }
 
-      // // If crumb is application root, it sets the crumb to the rootCrumb
-      // // Else it takes the breadcrumb from the data property
-      // let crumb: IBreadcrumb
-      // if (route.root === route) {
-      //   crumb = {
-      //     url: crumbUrl,
-      //     breadcrumb: this.rootCrumb.breadcrumb
-      //   }
-      //   crumbs.push(crumb);
-      // } else {
-      //   crumb = {
-      //     url: url,
-      //     breadcrumb: crumbLabel || '!!! You must set a breadcrumb on the data property of your route !!!'
-      //   }
-      //   crumbs.push(crumb);
-      // }
+      // If crumb is application root, it sets the crumb to the rootCrumb
+      // Else it takes the breadcrumb from the data property
+      let crumb: IBreadcrumb
+      if (route.root === route) {
+        crumb = {
+          url: this.rootCrumb.url,
+          breadcrumb: this.rootCrumb.breadcrumb
+        }
+        crumbs.push(crumb);
+      } else {
+        crumb = {
+          url: url,
+          breadcrumb: crumbLabel || '!!! You must set a breadcrumb on the data property of your route !!!'
+        }
+        crumbs.push(crumb);
+      }
 
-      // // Recursive base case
-      // // Returns crumbs when route has no more children
-      // if (route.children.length === 0) {
-      //   return crumbs;
-      // }
+      // Recursive base case
+      // Returns crumbs when route has no more children
+      if (route.children.length === 0) {
+        return crumbs;
+      }
       
-      // // If route has children, recurse with child that is currently in the URL
-      // if (route.children.length > 0) {
-      //   const currentChild: ActivatedRoute = this.getCurrentChild(route);
-      //   return this.getBreadcrumbs(currentChild, url, crumbs);
-      // }
+      // If route has children, recurse with child that is currently in the URL
+      if (route.children.length > 0) {
+        const currentChild: ActivatedRoute = this.getCurrentChild(route);
+        return this.getBreadcrumbs(currentChild, url, crumbs);
+      }
     }
 
     // Gets child route that is in path of primary outlet
